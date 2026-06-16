@@ -1,0 +1,6 @@
+{
+  "name": "Shri Jain Stationery Mart",
+  "description": "A modern e-commerce platform for quality stationery products located in Kota, Rajasthan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
