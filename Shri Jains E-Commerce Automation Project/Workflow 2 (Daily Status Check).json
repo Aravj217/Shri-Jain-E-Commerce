@@ -1,0 +1,107 @@
+{
+  "name": "Shri Jains - Delivery Status Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "cronExpression": "0 9 * * *"
+      },
+      "name": "Daily Cron",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "sheetId": "PASTE_YOUR_SHEET_ID_HERE",
+        "range": "Orders!A:Z"
+      },
+      "name": "Read Orders Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [420, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_CREDENTIAL_ID",
+          "name": "Google Sheets Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [],
+          "string": [
+            { "value1": "={{$json.Delivered}}", "operation": "equals", "value2": "NO" }
+          ],
+          "dateTime": [
+            {
+              "value1": "={{$json.DeliveryDate}}",
+              "operation": "before",
+              "value2": "={{$now}}"
+            }
+          ]
+        }
+      },
+      "name": "Check Delivery Due",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "toEmail": "={{$json.Email}}",
+        "subject": "Your order {{$json.OrderID}} has been delivered",
+        "htmlBody": "<p>Hi {{$json.Name}},</p><p>Your order <b>{{$json.OrderID}}</b> has been delivered successfully 🎉</p><p>Thank you for choosing <b>Shri Jains</b> 🙏</p>"
+      },
+      "name": "Delivery Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [880, 200],
+      "credentials": {
+        "smtp": {
+          "id": "SMTP_CREDENTIAL_ID",
+          "name": "SMTP Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "sheetId": "PASTE_YOUR_SHEET_ID_HERE",
+        "key": "OrderID",
+        "value": "={{$json.OrderID}}",
+        "updateFields": {
+          "Delivered": "YES"
+        }
+      },
+      "name": "Mark Delivered",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [880, 400],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_CREDENTIAL_ID",
+          "name": "Google Sheets Account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily Cron": {
+      "main": [[{ "node": "Read Orders Sheet", "type": "main", "index": 0 }]]
+    },
+    "Read Orders Sheet": {
+      "main": [[{ "node": "Check Delivery Due", "type": "main", "index": 0 }]]
+    },
+    "Check Delivery Due": {
+      "main": [
+        [{ "node": "Delivery Email", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Delivery Email": {
+      "main": [[{ "node": "Mark Delivered", "type": "main", "index": 0 }]]
+    }
+  }
+}

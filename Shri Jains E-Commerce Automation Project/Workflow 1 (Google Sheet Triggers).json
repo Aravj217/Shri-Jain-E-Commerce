@@ -1,0 +1,87 @@
+{
+  "name": "Shri Jains - Order Placed Emails",
+  "nodes": [
+    {
+      "parameters": {
+        "watchFor": "rowAdded",
+        "sheetId": "PASTE_YOUR_SHEET_ID_HERE",
+        "range": "Orders!A:Z"
+      },
+      "name": "Google Sheets Trigger",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_CREDENTIAL_ID",
+          "name": "Google Sheets Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "orderId", "value": "={{$json.OrderID}}" },
+            { "name": "customerName", "value": "={{$json.Name}}" },
+            { "name": "customerEmail", "value": "={{$json.Email}}" },
+            { "name": "deliveryDate", "value": "={{$json.DeliveryDate}}" },
+            {
+              "name": "address",
+              "value": "={{$json.Street}}, {{$json.City}}, {{$json.State}} - {{$json.Zip}}"
+            }
+          ]
+        }
+      },
+      "name": "Format Order Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "toEmail": "={{$json.customerEmail}}",
+        "subject": "Your order {{$json.orderId}} is placed successfully",
+        "htmlBody": "<p>Hi {{$json.customerName}},</p><p>Your order <b>{{$json.orderId}}</b> has been placed successfully.</p><p><b>Delivery Address:</b><br>{{$json.address}}</p><p><b>Delivery Date:</b> {{$json.deliveryDate}}</p><p>Thank you for shopping with <b>Shri Jains</b> 🙏</p>"
+      },
+      "name": "Email to Customer",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [650, 200],
+      "credentials": {
+        "smtp": {
+          "id": "SMTP_CREDENTIAL_ID",
+          "name": "SMTP Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toEmail": "admin@shrijains.com",
+        "subject": "New Order {{$json.orderId}} – Deliver by {{$json.deliveryDate}}",
+        "htmlBody": "<p>New order received.</p><p><b>Order ID:</b> {{$json.orderId}}<br><b>Customer:</b> {{$json.customerName}}<br><b>Delivery Date:</b> {{$json.deliveryDate}}</p><p>Please ensure timely delivery.</p>"
+      },
+      "name": "Email to Admin",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [650, 400],
+      "credentials": {
+        "smtp": {
+          "id": "SMTP_CREDENTIAL_ID",
+          "name": "SMTP Account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [[{ "node": "Format Order Data", "type": "main", "index": 0 }]]
+    },
+    "Format Order Data": {
+      "main": [
+        [{ "node": "Email to Customer", "type": "main", "index": 0 }],
+        [{ "node": "Email to Admin", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
